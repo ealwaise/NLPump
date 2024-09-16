@@ -8,7 +8,7 @@ stepcharts seems promising. In fact, such techniques have been [applied](https:/
 * Stepchart Analytics - Extract insights from pattern data, such as associations between patterns and difficulty.
 * Pattern Prediction - Predict the next step in a sequence given some number of prior steps.
 * Difficulty Prediction - Predict the difficulty of a stepchart based on step patterns.
-* Classification - Categorize/cluster stepcharts according to step patterns found within.
+* Classification - Categorize/cluster stepcharts according based on step patterns.
 
 # User Guide
 ---
