@@ -8,14 +8,14 @@ stepcharts seems promising. In fact, such techniques have been [applied](https:/
 * Stepchart Analytics - Extract insights from pattern data, such as associations between patterns and difficulty.
 * Pattern Prediction - Predict the next step in a sequence given some number of prior steps.
 * Difficulty Prediction - Predict the difficulty of a stepchart based on step patterns.
-* Classification - Categorizze/cluster stepcharts according to step patterns found within.
+* Classification - Categorize/cluster stepcharts according to step patterns found within.
 
 # User Guide
 ---
 To use NLPump, you first need to generate the stepchart data. This will require an .ssc file directory, which should consist of "pack" folders, each of which should contain "song" folders. An .ssc file should be within each song folder. Follow the steps below:
 
-* Run ``ssc_crawler.py`` (found in in the ``src`` subfolder of the NLPump directory) from the command line.
-* You will receive user prompts to enter in the path to your .ssc directory, the names of the pack folders you wish to include, and the name of the .csv file you wish to output.
+* Run ``ssc_crawler.py`` (found in the ``src`` subfolder of the NLPump directory) from the command line.
+* You will receive user prompts to enter in the path to your .ssc directory, the names of the pack folders you wish to process, and the name of the .csv file you wish to output.
 * After running the script, a .csv file with the chosen name should be found in the ``data`` subfolder of the NLPump directory. You can now open a Jupyter notebook and read in this .csv file to search for step patterns, as illustrated by the example in the ``notebooks`` subfolder of the NLPump directory.
 
 # Directory Structure
