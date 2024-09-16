@@ -105,8 +105,8 @@ class StepPatternSearcher:
         step_type: str,
         chart: str,
         step_pattern: str,
-        max_speed: float,
-        min_speed: float,
+        min_dt: float=0.0,
+        max_dt: float=1.0,
         tol: float=.01,
         hold_distinctions: bool=False
     ) -> list[float]:
@@ -128,9 +128,9 @@ class StepPatternSearcher:
             A serialized stepchart.
         step_pattern : str
             A string representing the step pattern to search for.
-        max_speed : float
+        min_dt : float
             The minimum time differential between steps in the pattern.
-        min_speed : float
+        max_dt : float
             The maximum time differential between steps in the pattern.
         hold_distinctions : bool
             If true, the caps/tails/interiors of holds will be distinguished
@@ -172,7 +172,7 @@ class StepPatternSearcher:
                     dt = time - prev_time
                     # Check if time differential is in required range.
                     if time_delta >= 0 and (abs(dt - time_delta) > tol or \
-                        dt < max_speed - tol or dt > min_speed + tol):
+                        dt < min_dt - tol or dt > max_dt + tol):
                         valid = False
                         break
 
