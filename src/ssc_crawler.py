@@ -19,7 +19,6 @@ import pandas as pd
 from ssc_parser import SSCFile
 from stepchart_parser import Stepchart
 from step_serializer import StepSerializer
-from step_pattern_searcher import StepPatternSearcher
 
 
 def get_item_paths(folder: str) -> list[str]:

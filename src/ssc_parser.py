@@ -3,7 +3,6 @@ This module contains the SSCFile class, which is used to parse .ssc
 files.
 """
 import os, re
-from stepchart_parser import Stepchart
 
 
 class SSCFile:
