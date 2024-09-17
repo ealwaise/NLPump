@@ -1,19 +1,19 @@
-'''
+"""
 This script will crawl through an input SSC directory and serialize the
 stepcharts in the .ssc files.
 
-To use this script, run it from the command line. You will be prompted to enter
-the path to your ssc directory, the names of the pack folders you wish to crawl
-through, and the name of the .csv file you wish to output. The script will then
-parse the .ssc files within the input pack folders and parse any Pump It Up
-single or double stepcharts found. Nonstandard charts, such as unofficial
-charts or quest charts, will be ignored. The steps of each chart will be
-serialized, and the script will save a .csv file in the data subfolder of the
-NLPump directory. The rows of the .csv file correspond to stepcharts, and the
-columns give the song title, step type (single or double), difficulty, and the
+To use this script, run it from the command line. You will be prompted
+to enter the path to your ssc directory, the names of the pack folders
+you wish to crawl through, and the name of the .csv file you wish to
+output. The script will then parse the .ssc files within the input pack
+folders and parse any Pump It Up single or double stepcharts found.
+Nonstandard charts, such as unofficial charts or quest charts, will be
+ignored. The steps of each chart will be serialized, and the script
+will save a .csv file in the data subfolder of the NLPump directory.
+The rows of the .csv file correspond to stepcharts, and the columns
+give the song title, step type (single or double), difficulty, and the
 serialized steps.
-'''
-
+"""
 import os, re
 import pandas as pd
 from ssc_parser import SSCFile
@@ -21,17 +21,18 @@ from stepchart_parser import Stepchart
 from step_serializer import StepSerializer
 from step_pattern_searcher import StepPatternSearcher
 
+
 def get_item_paths(folder: str) -> list[str]:
-    '''
+    """
     Returns the paths to all items found in the input directory.
 
     Raises an error if the input folder is not a directory.
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     folder : str
         The path to a directory.
-    '''
+    """
     # Raise an error if the input folder is not a directory.
     if not os.path.isdir(folder):
         raise ValueError(f'{folder} is not a valid directory.')
@@ -40,8 +41,9 @@ def get_item_paths(folder: str) -> list[str]:
 
     return paths
 
+
 def get_subfolders(folder: str) -> list[str]:
-    '''
+    """
     Returns the subfolders of an input directory.
 
     Arguments
@@ -53,13 +55,14 @@ def get_subfolders(folder: str) -> list[str]:
     -------
     subfolders : filter
         Yields the subfolders of the input folder.
-    '''
+    """
     subfolders = filter(os.path.isdir, get_item_paths(folder))
 
     return subfolders
 
+
 def get_sscs(folder: str) -> filter:
-    '''
+    """
     Returns the .ssc files in an input directory.
 
     Arguments
@@ -71,49 +74,51 @@ def get_sscs(folder: str) -> filter:
     -------
     sscs : filter
         Yields the .ssc files in the input folder.
-    '''
+    """
     check_ssc = lambda s: re.match('.*\.ssc$', s)
     sscs = filter(check_ssc, get_item_paths(folder))
 
     return sscs
 
+
 def crawl(folder: str, valid_packs: list=[], verbose: bool=True) -> list[str]:
-    '''
+    """
     Find all .ssc files in subfolders of the input directory.
 
-    The function assumes that the input directory contains "pack folders",
-    each of which contains "song folders" which contain the .ssc files, i.e.
-    the .ssc files are located exactly 2 subdirectories down from the input
-    directory. The arguments can be set to search only in specific pack folders
-    or to search in all subfolders of the parent directory.
+    The function assumes that the input directory contains 'pack
+    folders', each of which contains 'song folders' which contain the
+    .ssc files, i.e. the .ssc files are located exactly 2
+    subdirectories down from the input directory. The arguments can be
+    set to search only in specific pack folders or to search in all
+    subfolders of the parent directory.
 
     Raises an error if the input path is not a directory.
 
-    Parameters
-    ----------
+    Arguments
+    ---------
     folder : str
         A path to the parent directory to search in.
-    valid_packs: list[str]
+    valid_packs : list[str]
         A list of pack folders. If empty, all subfolders of the parent
-        directory will be searched. Otherwise, only packs in valid_packs will
-        be searched.
+        directory will be searched. Otherwise, only packs in
+        valid_packs will be searched.
     verbose : bool
-        If true, the function will print status updates such as the number of
-        .ssc files found in each pack folder.
+        If true, the function will print status updates such as the
+        number of .ssc files found in each pack folder.
 
     Returns
     -------
     all_sscs : list[str]
         A list of paths to all .ssc files found.
-    '''
+    """
     # Raise an error if the input path is not a directory.
     if not os.path.isdir(folder):
         raise ValueError(f'{folder} is not a valid directory.')
 
     if verbose:
-        print(f'Searching for .ssc files in {ssc_directory} ...')
+        print(f'Searching for .ssc files in {folder} ...')
 
-    # Get all ssc files from each pack.
+    # Get all .ssc files from each pack.
     all_sscs = []
     for pack in get_subfolders(folder):
         # Check if pack is in the desired search list.
@@ -128,22 +133,24 @@ def crawl(folder: str, valid_packs: list=[], verbose: bool=True) -> list[str]:
                 count += 1
                 sscs.append(ssc)
         all_sscs.extend(sscs)
-        # Print numebr of .ssc files found in the pack.
+        # Print the numebr of .ssc files found in the pack.
         if verbose:
             print(f'\tFound {count} .ssc files in {pack}')
 
-    # Print total number of .ssc files found.
+    # Print the total number of .ssc files found.
     if verbose:
-        print(f'Search complete. Found {len(all_sscs)} .ssc files in {folder}')
+        print()
+        print(f'Search done. Found {len(all_sscs)} .ssc files in {folder}')
 
     return all_sscs
 
+
 if __name__ == '__main__':
-    # Prompt the user to enter their ssc directory.
+    # Prompt the user to enter their .ssc directory.
     ssc_directory = str(input('Enter the path to your SSC directory: '))
     print()
 
-    # Raise an error if input directory is invalid.
+    # Raise an error if the input directory is invalid.
     if not os.path.isdir(ssc_directory):
         raise ValueError(f'{ssc_directory} is not a valid directory.')
 
@@ -169,7 +176,7 @@ if __name__ == '__main__':
     csv_path = os.path.join(data_folder, f'{file_name}.csv')
     print()
 
-    # Crawl through sscs and serialize steps.
+    # Crawl through the .ssc directory and serialize steps.
     serializer = StepSerializer()
     sscs = crawl(ssc_directory, valid_packs=packs)
     all_chart_data = []
@@ -177,7 +184,7 @@ if __name__ == '__main__':
         ssc = SSCFile(ssc)
         song_title = ssc.global_attributes['TITLE']
         for chart in ssc.stepcharts:
-            # Parse stepchart and serialize steeps.
+            # Parse the stepchart and serialize steps.
             chart = Stepchart(song_title, chart)
             if chart.standard:
                 step_type = chart.format
@@ -189,7 +196,7 @@ if __name__ == '__main__':
                 print(f'Serialized {song_title} {step_type}{difficulty}.')
         print()
 
-    # Create and save data.
+    # Create and save stepchart data.
     df = pd.DataFrame(
         data=all_chart_data,
         columns=['Song Title', 'Step Type', 'Difficulty', 'Steps']

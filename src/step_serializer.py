@@ -1,17 +1,17 @@
-'''
-This module contains the StepSerializer class, which can be used to serialize
-the steps of a Pump It Up stepchart.
-'''
-
+"""
+This module contains the StepSerializer class, which can be used to
+serialize the steps of a Pump It Up stepchart.
+"""
 import pandas as pd, numpy as np
 
+
 class StepSerializer:
-    '''
+    """
     This class serializes a Pump It Up stepchart.
 
-    The serialized chart contains steps that occur and the relevant timestamps
-    (in seconds).
-    '''
+    The serialized chart contains steps that occur and the relevant
+    timestamps (in seconds).
+    """
     panels = {
         'S': ['Z', 'Q', 'S', 'E', 'C'],
         'D': ['Z', 'Q', 'S', 'E', 'C', 'V', 'R', 'G', 'Y', 'N']
@@ -30,33 +30,35 @@ class StepSerializer:
     }
 
     def serialize_steps(self, step_type: str, chart_df: pd.DataFrame) -> str:
-        '''
+        """
         Serializes the steps of a stepchart.
 
-        The output consists of items separated by hyphens. Each item consists
-        of two subitems, separated by a colon - a timestamp (the second at
-        which the note occurs), and the steps. The steps are encoded using the
-        convention that the characters ZQSEC correspond to the panels on the P1
-        pad, while the characters VRGYN correspond to the panels on the P2 pad.
-        An uppercase letter indicates a tap, while a lowercase letter indicates
-        a hold. A lowercase letter followed by a 1 indicates the cap of a hold,
-        while a lowercase letter followed by a 0 indicates the tail of a hold.
+        The output consists of items separated by hyphens. Each item
+        consists of two subitems, separated by a colon - a timestamp
+        (the second at which the note occurs), and the steps. The steps
+        are encoded using the convention that the characters ZQSEC
+        correspond to the panels on the P1 pad, while the characters
+        VRGYN correspond to the panels on the P2 pad. An uppercase
+        letter indicates a tap, while a lowercase letter indicates a
+        hold. A lowercase letter followed by a 1 indicates the cap of a
+        hold, while a lowercase letter followed by a 0 indicates the
+        tail of a hold.
 
-        Parameters
-        ----------
+        Arguments
+        ---------
         step_type : str
-            Equal to 'S' if the chart is a singles chart or 'D' if the chart is
-            a doubles chart.
+            Equal to 'S' if the chart is a singles chart or 'D' if the
+            chart is a doubles chart.
         chart_df : pd.DataFrame
-            A data frame representing a step chart produced by the get_chart
-            method of the StepchartParser class.
+            A data frame representing a step chart produced by the
+            get_chart method of the StepchartParser class.
 
         Returns
         -------
         steps: str
-            A string containing hypen-separated components which indicate a
-            step together with the time at which it occurs.
-        '''
+            A string containing hypen-separated components which
+            indicate a step together with the time at which it occurs.
+        """
         # Isolate tap notes and hold caps/tails.
         taps = chart_df.loc[:, self.tap_cols[step_type]].sum(axis=1)
         hold_caps = chart_df.loc[:, self.hold_cols[step_type]].sum(axis=1)
@@ -66,7 +68,7 @@ class StepSerializer:
             + self.hold_dur_cols[step_type]
         df = chart_df.loc[sel, cols]
 
-        # Convert step columns to strings.
+        # Convert the step columns to strings.
         taps = df.loc[:, self.tap_cols[step_type]].apply(
             lambda col: np.char.multiply(
                 col.name.split('_')[-1],
@@ -92,7 +94,7 @@ class StepSerializer:
             )
         )
 
-        # Merge columns
+        # Merge the columns.
         string_df = pd.concat([
             np.round(df['sec'], 3).astype(str) + ':',
             taps,
@@ -100,7 +102,7 @@ class StepSerializer:
             hold_interiors + hold_tails
         ], axis=1)
 
-        # Get string representation of steps.
+        # Get the string representation of the steps.
         steps = '-'.join(string_df.sum(axis=1))
 
         return steps
