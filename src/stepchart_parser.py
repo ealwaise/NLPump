@@ -46,7 +46,12 @@ class Stepchart:
         'fakes': ['beat', 'fake']
     }
 
-    def __init__(self, song_title: str, stepchart: str):
+    def __init__(
+        self,
+        song_title: str,
+        stepchart: str,
+        convert_half_doubles: bool=True
+    ):
         """
         Initializes a Stepchart object from the song title and parsed
         stepchart section.
@@ -57,21 +62,26 @@ class Stepchart:
             The title of the song.
         stepchart : str
             A parsed stepchart section of an .ssc file.
+        convert_half_doubles:
+            If true and the chart is half-doubles, it will be parsed as
+            a doubles chart.
         """
         attributes = stepchart['attributes']
-        stepstype = attributes['STEPSTYPE']
+        self.stepstype = attributes['STEPSTYPE']
 
         # Infer the number of panels based on the steptype.
         self.panels = 0
-        self.format = 'unknown'
-        if stepstype == 'pump-single':
+        self.step_type = 'unknown'
+        if self.stepstype == 'pump-single':
             self.panels = 5
-            self.format = 'S'
-        elif stepstype == 'pump-double':
+            self.step_type = 'S'
+        elif self.stepstype == 'pump-double' or \
+        & (self.convert_half_doubles and self.stepstype == 'pump-halfdouble'):
             self.panels = 10
-            self.format = 'D'
+            self.step_type = 'D'
         self.difficulty = int(attributes['METER'])
-        self.title = f'{song_title} {self.format}{self.difficulty}'
+        self.song_title = song_title
+        self.title = f'{song_title} {self.step_type}{self.difficulty}'
         self.offset = float(attributes['OFFSET'])
 
         # Check if the chart should be excluded.
@@ -86,7 +96,7 @@ class Stepchart:
             'INFINITY' in description,
             'TRAIN' in description
         ]
-        self.standard = self.format in ['S', 'D'] and not any(blacklist) \
+        self.standard = self.step_type in ['S', 'D'] and not any(blacklist) \
             and self.standard_notes(stepchart['notes'])
 
         # Get the timing attributes and the notes section.
@@ -169,11 +179,23 @@ class Stepchart:
         for note in notes:
             note = note.strip()
             if note.startswith(','):
-                clean_notes.append(',')
+                clean_notes.append
+            # Ignore measure-separating lines.
             elif note.startswith('//'):
                 continue
+
             else:
-                note = note[:self.panels]
+                # Determine the number of panels.
+                if self.stepstype == 'pump-single':
+                    panels = 5
+                elif self.stepstype == 'pump-halfdouble':
+                    panels = 6
+                elif self.stepstype == 'pump-double':
+                    panels = 10
+                else:
+                    panels = 0
+
+                note = note[:panels]
                 # Set a flag if a note doesn't match the pattern.
                 if not re.match(note_pat, note):
                     self.standard = False
@@ -225,6 +247,10 @@ class Stepchart:
         parsed_measure = []
 
         for note in notes:
+            # Convert a half-doubles note to a doubles note.
+            if self.convert_half_doubles \
+            and self.stepstype == 'pump-halfdouble':
+                note = f'00{note}00'
             for panel, step_type in enumerate(note):
                 if step_type != '0':
                     parsed_step = self.parse_step(panel, step_type, beat)
@@ -572,4 +598,10 @@ class Stepchart:
         # Forward fill the 'tickcount' column.
         chart_df['tickcount'] = chart_df['tickcount'].ffill()
 
+        # Delete duplicated timestamps.
+        chart_df = chart_df.drop_duplicates(subset='sec')
+
         return chart_df
+
+    def to_ssc():
+        
