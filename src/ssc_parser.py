@@ -14,28 +14,28 @@ class SSCFile:
     parser will separate the two and get the attributes of each.
     """
     
-    def __init__(self, file_name: str, verbose=True):
+    def __init__(self, file_path: str, verbose=True):
         """
         Initializes an SSCFile object from a path to an .ssc file.
 
         Arguments
         ---------
-        file_name : str
+        file_path : str
             A file path to an .ssc file.
         verbose : bool
             If true, prints a message if the parsing is successful.
         """
         # Raise an error if the file name is not a valid path.
-        if not os.path.isfile(file_name):
-            raise ValueError(f'{file_name} is not a valid file path.')
+        if not os.path.isfile(file_path):
+            raise ValueError(f'{file_path} is not a valid file path.')
         
         # Raise an error if the file is not an .ssc file.
-        ext = os.path.splitext(file_name)[-1].lower()
+        ext = os.path.splitext(file_path)[-1].lower()
         if ext != '.ssc':
-            raise ValueError(f'{file_name} is not an .ssc file')
+            raise ValueError(f'{file_path} is not an .ssc file')
 
         # Find sections.
-        lines = open(file_name, 'r').readlines()
+        lines = open(file_path, 'r').readlines()
         sections = self.parse_sections(lines)
 
         # Get global attributes.
@@ -49,7 +49,7 @@ class SSCFile:
 
         # Print a message when parsing is complete.
         if verbose:
-            name = file_name.split(os.path.sep)[-1]
+            name = file_path.split(os.path.sep)[-1]
             print(f'{name} successfuly parsed.')
 
     def parse_sections(self, lines: list[str]) -> dict:
@@ -84,12 +84,12 @@ class SSCFile:
 
         # Raise an error if the song title is not found.
         assert '#TITLE' in sections[0], \
-            f'Error in parsing {self.ssc_file_name}: missing song title.'
+            f'Error in parsing {self.file_path}: missing song title.'
 
         # Raise an error if the step type is not found.
         for section in sections[1:]:
             assert '#STEPSTYPE' in section, \
-                f'Error in parsing {self.ssc_file_name}: missing step type.'
+                f'Error in parsing {self.file_path}: missing step type.'
 
         parsed_sections = {
             'global_header': sections[0],
