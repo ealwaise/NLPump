@@ -55,7 +55,8 @@ class StepPatternSearcher:
     def get_regex_pattern(
         self,
         step_pattern: str,
-        hold_distinctions: bool
+        hold_distinctions: bool,
+        repeat: bool
     ) -> list[str]:
         """
         Convert an input step pattern into a regular expression.
@@ -72,32 +73,46 @@ class StepPatternSearcher:
         step_pattern : str
             A string representing the step pattern to search for.
         hold_distinctions : bool
-            If true, the caps/tails/interiors of holds will be distinguished
-            for searching.
+            If true, the caps/tails/interiors of holds will be
+            distinguished for searching.
+        repeat : bool
+            If true, the pattern will be modified to look for the
+            longest sequences formed by concatenating the input
+            pattern.
 
         Returns
         -------
         pattern : str
-            A list containing timestamps at which the pattern can be found. 
+            A list containing timestamps at which the pattern can be
+            found. 
         """
         pattern = []
         notes = step_pattern.split('-')
 
         for i, steps in enumerate(notes):
-            # Sort the steps to prevent the input order from mattering.
-            steps = sorted(steps, key=lambda c: self.order.index(c))
+            # Create the pattern to search for a generic note.
+            if steps == '*':
+                chars = f'{self.order}[0-1]'
+                subpattern = f'{self.num_pattern}:[{chars}]*'
 
-            # Prevent hold caps/tails/interiors from being
-            # distinguished.
-            if not hold_distinctions:
-                for j, step in enumerate(steps):
-                    if step.islower():
-                        steps[j] = f'{step}[0-1]{{0,1}}'
-            steps = ''.join(steps)
-            subpattern = f'{self.num_pattern}:{steps}'
+            # Create the patternt to search for a specfiic note.
+            else:
+                # Sort the steps so the search is input order agnostic.
+                steps = sorted(steps, key=lambda c: self.order.index(c))
+
+                # Prevent hold caps/tails/interiors from being
+                # distinguished.
+                if not hold_distinctions:
+                    for j, step in enumerate(steps):
+                        if step.islower():
+                            steps[j] = f'{step}[0-1]{{0,1}}'
+                steps = ''.join(steps)
+                subpattern = f'{self.num_pattern}:{steps}'
             pattern.append(subpattern)
 
         pattern = '-'.join(pattern)
+        if repeat:
+            pattern = f'[{pattern}]*'
 
         return pattern
 
@@ -109,17 +124,19 @@ class StepPatternSearcher:
         min_dt: float=0.0,
         max_dt: float=1.0,
         tol: float=.01,
-        hold_distinctions: bool=False
-    ) -> list[float]:
+        hold_distinctions: bool=False,
+        repeat: bool=False
+    ) -> list[list[float]]:
         """
         Search a chart for a step pattern within a speed range.
 
         This function can search for a step pattern, defined as a
         sequence of steps separated by a constant amount of time. The
         input step pattern is converted into a reuglar expression used
-        to search a serialized stepchart. The output is a list of
-        timestamps which indicate points at which the input pattern
-        occurs within the chart.
+        to search a serialized stepchart. The output is a list
+        containing timestamps indiating points at which the input
+        pattern occurs within the chart and the speed at which the
+        pattern occurs, measured in seconds between consecutive steps.
 
         Arguments
         ---------
@@ -134,21 +151,28 @@ class StepPatternSearcher:
             The minimum time differential between steps in the pattern.
         max_dt : float
             The maximum time differential between steps in the pattern.
-        hold_distinctions : bool
-            If true, the caps/tails/interiors of holds will be
-            distinguished for searching.
         tol : float
             A tolerance parameter controlling how close the time
             differentials between steps need to be to the input range.
+        hold_distinctions : bool
+            If true, the caps/tails/interiors of holds will be
+            distinguished for searching.
+        repeat : bool
+            If true, the searcher will look for the longest sequences
+            formed by concatenating the input pattern.
 
         Returns
         -------
-        timestamps : list[float]
+        matches : list[list[float]]
             A list containing timestamps at which the pattern can be
-            found.
+            found and the time difference between consecutive steps.
         """
         # Get the regular expression pattern and find possible matches.
-        pattern = self.get_regex_pattern(step_pattern, hold_distinctions)
+        pattern = self.get_regex_pattern(
+            step_pattern,
+            hold_distinctions,
+            repeat
+        )
         possible_matches = re.findall(pattern, chart)
 
         # Find possible matches for the mirrored pattern.
@@ -158,15 +182,17 @@ class StepPatternSearcher:
         if mirrored_step_pattern != step_pattern:
             mirrored_pattern = self.get_regex_pattern(
                 mirrored_step_pattern,
-                hold_distinctions
+                hold_distinctions,
+                repeat
             )
             possible_matches.extend(re.findall(mirrored_pattern, chart))
 
         # Retain only matches satisfying the speed constraints.
-        timestamps = []
+        matches = []
         for match in possible_matches:
             valid = True
             notes = match.split('-')
+            time_delta = 0
             if len(notes) > 1:
                 time_delta = -1
                 prev_time = float(notes[0].split(':')[0])
@@ -186,6 +212,6 @@ class StepPatternSearcher:
             # constraints.
             if valid:
                 timestamp = float(match.split('-')[0].split(':')[0])
-                timestamps.append(timestamp)
+                matches.append([timestamp, time_delta])
 
-        return timestamps
+        return matches
