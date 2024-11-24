@@ -72,16 +72,18 @@ class Stepchart:
         # Infer the number of panels based on the steptype.
         self.panels = 0
         self.step_type = 'unknown'
+        self.convert_half_doubles = convert_half_doubles
         if self.stepstype == 'pump-single':
             self.panels = 5
             self.step_type = 'S'
-        elif self.stepstype == 'pump-double' or \
-        & (self.convert_half_doubles and self.stepstype == 'pump-halfdouble'):
+        elif self.stepstype == 'pump-double' \
+        or (self.convert_half_doubles and self.stepstype == 'pump-halfdouble'):
             self.panels = 10
             self.step_type = 'D'
-        self.difficulty = int(attributes['METER'])
+
+        self.level = int(attributes['METER'])
         self.song_title = song_title
-        self.title = f'{song_title} {self.step_type}{self.difficulty}'
+        self.title = f'{song_title} {self.step_type}{self.level}'
         self.offset = float(attributes['OFFSET'])
 
         # Check if the chart should be excluded.
@@ -602,6 +604,4 @@ class Stepchart:
         chart_df = chart_df.drop_duplicates(subset='sec')
 
         return chart_df
-
-    def to_ssc():
         
