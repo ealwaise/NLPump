@@ -186,7 +186,7 @@ if __name__ == '__main__':
             # Parse the stepchart and serialize steps.
             chart = Stepchart(song_title, chart)
             if chart.standard:
-                step_type = chart.format
+                step_type = chart.step_type
                 difficulty = chart.difficulty
                 df = chart.chart_to_df()
                 steps = serializer.serialize_steps(step_type, df)
