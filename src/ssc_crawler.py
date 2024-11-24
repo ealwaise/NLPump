@@ -11,7 +11,7 @@ Nonstandard charts, such as unofficial charts or quest charts, will be
 ignored. The steps of each chart will be serialized, and the script
 will save a .csv file in the data subfolder of the NLPump directory.
 The rows of the .csv file correspond to stepcharts, and the columns
-give the song title, step type (single or double), difficulty, and the
+give the song title, step type (single or double), level, and the
 serialized steps.
 """
 import os, re
@@ -187,17 +187,17 @@ if __name__ == '__main__':
             chart = Stepchart(song_title, chart)
             if chart.standard:
                 step_type = chart.step_type
-                difficulty = chart.difficulty
+                level = chart.level
                 df = chart.chart_to_df()
                 steps = serializer.serialize_steps(step_type, df)
-                data = [song_title, step_type, difficulty, steps]
+                data = [song_title, step_type, level, steps]
                 all_chart_data.append(data)
-                print(f'Serialized {song_title} {step_type}{difficulty}.')
+                print(f'Serialized {song_title} {step_type}{level}.')
         print()
 
     # Create and save stepchart data.
     df = pd.DataFrame(
         data=all_chart_data,
-        columns=['Song Title', 'Step Type', 'Difficulty', 'Steps']
+        columns=['Song Title', 'Step Type', 'Level', 'Steps']
     )
     df.to_csv(csv_path, index=False)
