@@ -88,15 +88,18 @@ class Stepchart:
 
         # Check if the chart should be excluded.
         description = attributes['DESCRIPTION']
+        self.description = description
         blacklist = [
             'UCS' in description,
-            'QUEST' in description,
-            'HIDDEN' in description,
-            'HALF' in description,
-            'SP' in description,
-            'DP' in description,
+            'JUMP' in description,
+            'PRO' in description,
+            'MOBILE' in description,
             'INFINITY' in description,
-            'TRAIN' in description
+            'QUEST' in description,
+            'TRAIN' in description,
+            'HIDDEN' in description,
+            'SP' in description,
+            'DP' in description
         ]
         self.standard = self.step_type in ['S', 'D'] and not any(blacklist) \
             and self.standard_notes(stepchart['notes'])
@@ -136,7 +139,7 @@ class Stepchart:
         """
         is_standard = True
         notes = re.split('\n+', notes.strip())
-        note_pat = '[0-3F]*$' # Note lines should match this pattern.
+        note_pat = '[0-3F6{nvshLMNVSH|}]*$' # Note lines should match this pattern.
 
         # Check each note line and remove comments.
         for note in notes:
@@ -146,6 +149,7 @@ class Stepchart:
             elif not note.startswith(','):
                 note = note[:self.panels]
                 if not re.match(note_pat, note):
+                    print(note, self.title)
                     is_standard = False
                     break
 
@@ -175,13 +179,13 @@ class Stepchart:
         notes = re.split('\n+', notes.strip())
         clean_notes = []
 
-        note_pat = '[0-3F]*$' # Note lines should match this pattern.
+        note_pat = '[0-3F6{nvshLMNVSH|}]*$' # Note lines should match this pattern.
 
         # Check each note line and remove comments.
         for note in notes:
             note = note.strip()
             if note.startswith(','):
-                clean_notes.append
+                clean_notes.append(note)
             # Ignore measure-separating lines.
             elif note.startswith('//'):
                 continue
@@ -196,6 +200,15 @@ class Stepchart:
                     panels = 10
                 else:
                     panels = 0
+
+                # Replace StepF2 notation.
+                note = re.sub('{[FM]|[nvsh]\|[0-1]\|[0-1]}', '0', note)
+                note = re.sub('{[1MFSVH]|[nvsh]\|1\|[0-1]}', '0', note)
+                note = re.sub('{[1SVHL]|[nvsh]\|0\|[0-1]}', '1', note)
+                note = re.sub('{2|[nvsh]\|0\|[0-1]}', '2', note)
+                note = re.sub('{3|[nvsh]\|0\|[0-1]}', '3', note)
+                note = note.replace('L', '1')
+                note = note.replace('6', '2')
 
                 note = note[:panels]
                 # Set a flag if a note doesn't match the pattern.
