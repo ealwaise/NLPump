@@ -35,7 +35,7 @@ class SSCFile:
             raise ValueError(f'{file_path} is not an .ssc file')
 
         # Find sections.
-        lines = open(file_path, 'r').readlines()
+        lines = open(file_path, 'r', encoding='utf-8').readlines()
         sections = self.parse_sections(lines)
 
         # Get global attributes.
