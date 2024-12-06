@@ -14,6 +14,7 @@ The rows of the .csv file correspond to stepcharts, and the columns
 give the song title, step type (single or double), level, and the
 serialized steps.
 """
+
 import os, re
 import pandas as pd
 from ssc_parser import SSCFile
@@ -23,9 +24,9 @@ from step_serializer import StepSerializer
 
 def get_item_paths(folder: str) -> list[str]:
     """
-    Returns the paths to all items found in the input directory.
+    Return the paths to all items found in the input directory.
 
-    Raises an error if the input folder is not a directory.
+    An error will be raised if the input folder is not a directory.
 
     Arguments
     ---------
@@ -34,7 +35,7 @@ def get_item_paths(folder: str) -> list[str]:
     """
     # Raise an error if the input folder is not a directory.
     if not os.path.isdir(folder):
-        raise ValueError(f'{folder} is not a valid directory.')
+        raise ValueError(f"{folder} is not a valid directory.")
     list_dir = os.listdir(folder)
     paths = [os.path.join(folder, subfolder) for subfolder in list_dir]
 
@@ -43,7 +44,7 @@ def get_item_paths(folder: str) -> list[str]:
 
 def get_subfolders(folder: str) -> list[str]:
     """
-    Returns the subfolders of an input directory.
+    Return the subfolders of an input directory.
 
     Arguments
     ---------
@@ -62,7 +63,7 @@ def get_subfolders(folder: str) -> list[str]:
 
 def get_sscs(folder: str) -> filter:
     """
-    Returns the .ssc files in an input directory.
+    Return the .ssc files in an input directory.
 
     Arguments
     ---------
@@ -74,13 +75,13 @@ def get_sscs(folder: str) -> filter:
     sscs : filter
         Yields the .ssc files in the input folder.
     """
-    check_ssc = lambda s: re.match('.*\.ssc$', s)
+    check_ssc = lambda s: re.match(".*\.ssc$", s)
     sscs = filter(check_ssc, get_item_paths(folder))
 
     return sscs
 
 
-def crawl(folder: str, valid_packs: list=[], verbose: bool=True) -> list[str]:
+def crawl(folder: str, valid_packs: list = [], verbose: bool = True) -> list[str]:
     """
     Find all .ssc files in subfolders of the input directory.
 
@@ -112,10 +113,10 @@ def crawl(folder: str, valid_packs: list=[], verbose: bool=True) -> list[str]:
     """
     # Raise an error if the input path is not a directory.
     if not os.path.isdir(folder):
-        raise ValueError(f'{folder} is not a valid directory.')
+        raise ValueError(f"{folder} is not a valid directory.")
 
     if verbose:
-        print(f'Searching for .ssc files in {folder} ...')
+        print(f"Searching for .ssc files in {folder} ...")
 
     # Get all .ssc files from each pack.
     all_sscs = []
@@ -134,45 +135,45 @@ def crawl(folder: str, valid_packs: list=[], verbose: bool=True) -> list[str]:
         all_sscs.extend(sscs)
         # Print the numebr of .ssc files found in the pack.
         if verbose:
-            print(f'\tFound {count} .ssc files in {pack}')
+            print(f"\tFound {count} .ssc files in {pack}")
 
     # Print the total number of .ssc files found.
     if verbose:
         print()
-        print(f'Search done. Found {len(all_sscs)} .ssc files in {folder}')
+        print(f"Search done. Found {len(all_sscs)} .ssc files in {folder}")
 
     return all_sscs
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Prompt the user to enter their .ssc directory.
-    ssc_directory = str(input('Enter the path to your SSC directory: '))
+    ssc_directory = str(input("Enter the path to your SSC directory: "))
     print()
 
     # Raise an error if the input directory is invalid.
     if not os.path.isdir(ssc_directory):
-        raise ValueError(f'{ssc_directory} is not a valid directory.')
+        raise ValueError(f"{ssc_directory} is not a valid directory.")
 
     # Prompt the user to enter a list of packs.
-    prompt = '''
+    prompt = """
         Enter a list of song pack names, separated by commas. If you wish to
         parse all song packs in your SSC directory, enter a null argument: 
-    '''
-    prompt = re.sub('\s+', ' ', prompt.lstrip())
-    packs = str(input(prompt)).split(',')
+    """
+    prompt = re.sub("\s+", " ", prompt.lstrip())
+    packs = str(input(prompt)).split(",")
     if len(packs) == 1 and len(packs[0]) == 0:
         packs.clear()
     print()
 
     # Prompt the user to enter a file name for the resulting .csv file.
-    prompt = '''
+    prompt = """
         Enter a file name for the .csv file to be produced (do not include the
         extension): 
-    '''
-    prompt = re.sub('\s+', ' ', prompt.lstrip())
+    """
+    prompt = re.sub("\s+", " ", prompt.lstrip())
     file_name = str(input(prompt))
-    data_folder = os.path.join(os.path.dirname(os.getcwd()), 'data')
-    csv_path = os.path.join(data_folder, f'{file_name}.csv')
+    data_folder = os.path.join(os.path.dirname(os.getcwd()), "data")
+    csv_path = os.path.join(data_folder, f"{file_name}.csv")
     print()
 
     # Crawl through the .ssc directory and serialize steps.
@@ -181,7 +182,7 @@ if __name__ == '__main__':
     all_chart_data = []
     for ssc in sscs:
         ssc = SSCFile(ssc)
-        song_title = ssc.global_attributes['TITLE']
+        song_title = ssc.global_attributes["TITLE"]
         for chart in ssc.stepcharts:
             # Parse the stepchart and serialize steps.
             chart = Stepchart(song_title, chart)
@@ -192,12 +193,11 @@ if __name__ == '__main__':
                 steps = serializer.serialize_steps(step_type, df)
                 data = [song_title, step_type, level, steps]
                 all_chart_data.append(data)
-                print(f'Serialized {song_title} {step_type}{level}.')
+                print(f"Serialized {song_title} {step_type}{level}.")
         print()
 
     # Create and save stepchart data.
     df = pd.DataFrame(
-        data=all_chart_data,
-        columns=['Song Title', 'Step Type', 'Level', 'Steps']
+        data=all_chart_data, columns=["Song Title", "Step Type", "Level", "Steps"]
     )
     df.to_csv(csv_path, index=False)

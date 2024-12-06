@@ -3,6 +3,7 @@ This module contains the Stepchart class, which is used to parse the
 contents of a Pump It Up stepchart and transform them into a tabular
 format.
 """
+
 from functools import reduce
 import re
 import pandas as pd, numpy as np
@@ -15,45 +16,32 @@ class Stepchart:
     be transformed into a .csv file which stores these contents along
     with corresponding timestamps.
     """
-    panel_map = [
-        'Z',
-        'Q',
-        'S',
-        'E',
-        'C',
-        'V',
-        'R',
-        'G',
-        'Y',
-        'N'
-    ]
+
+    panel_map = ["Z", "Q", "S", "E", "C", "V", "R", "G", "Y", "N"]
     step_type_map = {
-        '1': 'tap',
-        '2': 'hold (cap)',
-        '3': 'hold (tail)',
-        'F': 'fake',
-        'M': 'mine',
-        'L': 'lift'
+        "1": "tap",
+        "2": "hold (cap)",
+        "3": "hold (tail)",
+        "F": "fake",
+        "M": "mine",
+        "L": "lift",
     }
     timing_map = {
-        'bpms': ['beat', 'bpm'],
-        'stops': ['beat', 'stop'],
-        'delays': ['beat', 'delay'],
-        'warps': ['beat', 'warp'],
-        'tickcounts': ['beat', 'tickcount'],
-        'speeds': ['beat', 'speed', 'speed_duration', 'speed_mode'],
-        'scrolls': ['beat', 'scroll_factor'],
-        'fakes': ['beat', 'fake']
+        "bpms": ["beat", "bpm"],
+        "stops": ["beat", "stop"],
+        "delays": ["beat", "delay"],
+        "warps": ["beat", "warp"],
+        "tickcounts": ["beat", "tickcount"],
+        "speeds": ["beat", "speed", "speed_duration", "speed_mode"],
+        "scrolls": ["beat", "scroll_factor"],
+        "fakes": ["beat", "fake"],
     }
 
     def __init__(
-        self,
-        song_title: str,
-        stepchart: str,
-        convert_half_doubles: bool=True
+        self, song_title: str, stepchart: str, convert_half_doubles: bool = True
     ):
         """
-        Initializes a Stepchart object from the song title and parsed
+        Initialize a Stepchart object from the song title and parsed
         stepchart section.
 
         Arguments
@@ -66,60 +54,64 @@ class Stepchart:
             If true and the chart is half-doubles, it will be parsed as
             a doubles chart.
         """
-        attributes = stepchart['attributes']
-        self.stepstype = attributes['STEPSTYPE']
+        attributes = stepchart["attributes"]
+        self.stepstype = attributes["STEPSTYPE"]
 
         # Infer the number of panels based on the steptype.
         self.panels = 0
-        self.step_type = 'unknown'
+        self.step_type = "unknown"
         self.convert_half_doubles = convert_half_doubles
-        if self.stepstype == 'pump-single':
+        if self.stepstype == "pump-single":
             self.panels = 5
-            self.step_type = 'S'
-        elif self.stepstype == 'pump-double' \
-        or (self.convert_half_doubles and self.stepstype == 'pump-halfdouble'):
+            self.step_type = "S"
+        elif self.stepstype == "pump-double" or (
+            self.convert_half_doubles and self.stepstype == "pump-halfdouble"
+        ):
             self.panels = 10
-            self.step_type = 'D'
+            self.step_type = "D"
 
-        self.level = int(attributes['METER'])
+        self.level = int(attributes["METER"])
         self.song_title = song_title
-        self.title = f'{song_title} {self.step_type}{self.level}'
-        self.offset = float(attributes['OFFSET'])
+        self.title = f"{song_title} {self.step_type}{self.level}"
+        self.offset = float(attributes["OFFSET"])
 
         # Check if the chart should be excluded.
-        description = attributes['DESCRIPTION']
+        description = attributes["DESCRIPTION"]
         self.description = description
         blacklist = [
-            'UCS' in description,
-            'JUMP' in description,
-            'PRO' in description,
-            'MOBILE' in description,
-            'INFINITY' in description,
-            'QUEST' in description,
-            'TRAIN' in description,
-            'HIDDEN' in description,
-            'SP' in description,
-            'DP' in description
+            "UCS" in description,
+            "JUMP" in description,
+            "PRO" in description,
+            "MOBILE" in description,
+            "INFINITY" in description,
+            "QUEST" in description,
+            "TRAIN" in description,
+            "HIDDEN" in description,
+            "SP" in description,
+            "DP" in description,
         ]
-        self.standard = self.step_type in ['S', 'D'] and not any(blacklist) \
-            and self.standard_notes(stepchart['notes'])
+        self.standard = (
+            self.step_type in ["S", "D"]
+            and not any(blacklist)
+            and self.standard_notes(stepchart["notes"])
+        )
 
         # Get the timing attributes and the notes section.
         self.timing_data = {
-            'bpms': attributes['BPMS'],
-            'stops': attributes.get('STOPS', ''),
-            'delays': attributes.get('DELAYS', ''),
-            'warps': attributes.get('WARPS', ''),
-            'tickcounts': attributes['TICKCOUNTS'],
-            'speeds': attributes['SPEEDS'],
-            'scrolls': attributes['SCROLLS'],
-            'fakes': attributes.get('FAKES', '')
+            "bpms": attributes["BPMS"],
+            "stops": attributes.get("STOPS", ""),
+            "delays": attributes.get("DELAYS", ""),
+            "warps": attributes.get("WARPS", ""),
+            "tickcounts": attributes["TICKCOUNTS"],
+            "speeds": attributes["SPEEDS"],
+            "scrolls": attributes["SCROLLS"],
+            "fakes": attributes.get("FAKES", ""),
         }
-        self.notes = stepchart['notes']
+        self.notes = stepchart["notes"]
 
     def standard_notes(self, notes: str) -> bool:
         """
-        Checks for any unusual notes in the stepchart.
+        Check for any unusual notes in the stepchart.
 
         This function will return True if the stepchart contains only
         standard notes, meaning taps, holds, and fake notes. Mines,
@@ -138,16 +130,16 @@ class Stepchart:
             otherwise.
         """
         is_standard = True
-        notes = re.split('\n+', notes.strip())
-        note_pat = '[0-3F6{nvshLMNVSH|}]*$' # Note lines should match this pattern.
+        notes = re.split("\n+", notes.strip())
+        note_pat = "[0-3F6{nvshLMNVSH|}]*$"  # Note lines should match this pattern.
 
         # Check each note line and remove comments.
         for note in notes:
             note = note.strip()
-            if note.startswith('//'):
+            if note.startswith("//"):
                 continue
-            elif not note.startswith(','):
-                note = note[:self.panels]
+            elif not note.startswith(","):
+                note = note[: self.panels]
                 if not re.match(note_pat, note):
                     print(note, self.title)
                     is_standard = False
@@ -157,7 +149,7 @@ class Stepchart:
 
     def parse_steps(self, notes: str) -> list:
         """
-        Parses the note data in the stepchart.
+        Parse the note data in the stepchart.
 
         The note data consists of measures, separated by commas. This
         function separates the measures and parses them in succession.
@@ -176,39 +168,39 @@ class Stepchart:
         if self.panels == 0:
             return []
 
-        notes = re.split('\n+', notes.strip())
+        notes = re.split("\n+", notes.strip())
         clean_notes = []
 
-        note_pat = '[0-3F6{nvshLMNVSH|}]*$' # Note lines should match this pattern.
+        note_pat = "[0-3F6{nvshLMNVSH|}]*$"  # Note lines should match this pattern.
 
         # Check each note line and remove comments.
         for note in notes:
             note = note.strip()
-            if note.startswith(','):
+            if note.startswith(","):
                 clean_notes.append(note)
             # Ignore measure-separating lines.
-            elif note.startswith('//'):
+            elif note.startswith("//"):
                 continue
 
             else:
                 # Determine the number of panels.
-                if self.stepstype == 'pump-single':
+                if self.stepstype == "pump-single":
                     panels = 5
-                elif self.stepstype == 'pump-halfdouble':
+                elif self.stepstype == "pump-halfdouble":
                     panels = 6
-                elif self.stepstype == 'pump-double':
+                elif self.stepstype == "pump-double":
                     panels = 10
                 else:
                     panels = 0
 
                 # Replace StepF2 notation.
-                note = re.sub('{[FM]|[nvsh]\|[0-1]\|[0-1]}', '0', note)
-                note = re.sub('{[1MFSVH]|[nvsh]\|1\|[0-1]}', '0', note)
-                note = re.sub('{[1SVHL]|[nvsh]\|0\|[0-1]}', '1', note)
-                note = re.sub('{2|[nvsh]\|0\|[0-1]}', '2', note)
-                note = re.sub('{3|[nvsh]\|0\|[0-1]}', '3', note)
-                note = note.replace('L', '1')
-                note = note.replace('6', '2')
+                note = re.sub("{[FM]|[nvsh]\|[0-1]\|[0-1]}", "0", note)
+                note = re.sub("{[1MFSVH]|[nvsh]\|1\|[0-1]}", "0", note)
+                note = re.sub("{[1SVHL]|[nvsh]\|0\|[0-1]}", "1", note)
+                note = re.sub("{2|[nvsh]\|0\|[0-1]}", "2", note)
+                note = re.sub("{3|[nvsh]\|0\|[0-1]}", "3", note)
+                note = note.replace("L", "1")
+                note = note.replace("6", "2")
 
                 note = note[:panels]
                 # Set a flag if a note doesn't match the pattern.
@@ -217,7 +209,7 @@ class Stepchart:
                     break
 
                 clean_notes.append(note)
-        notes = '\n'.join(clean_notes)
+        notes = "\n".join(clean_notes)
 
         # If the chart contains unusual notes, return an empty list.
         if not self.standard:
@@ -226,7 +218,7 @@ class Stepchart:
         # Loop through measures and parse notes.
         steps = []
         beat = 0
-        measures = notes.split(',')
+        measures = notes.split(",")
         for measure in measures:
             measure = measure.strip()
             parsed_measure = self.parse_measure(measure, beat)
@@ -257,17 +249,16 @@ class Stepchart:
         parsed_measure : list[list]
             A 2D list containing the parsed steps within the measure.
         """
-        notes = measure.split('\n')
+        notes = measure.split("\n")
         num_notes = len(notes)
         parsed_measure = []
 
         for note in notes:
             # Convert a half-doubles note to a doubles note.
-            if self.convert_half_doubles \
-            and self.stepstype == 'pump-halfdouble':
-                note = f'00{note}00'
+            if self.convert_half_doubles and self.stepstype == "pump-halfdouble":
+                note = f"00{note}00"
             for panel, step_type in enumerate(note):
-                if step_type != '0':
+                if step_type != "0":
                     parsed_step = self.parse_step(panel, step_type, beat)
                     parsed_measure.append(parsed_step)
             beat += 4 / num_notes
@@ -281,7 +272,7 @@ class Stepchart:
         A step is a single character in a single line of the note data
         from an .ssc file. This function maps the character to the
         corresponding type of step (tap, hold cap, hold tail, etc.).
-        
+
         Arguments
         ---------
         panel: int
@@ -326,7 +317,7 @@ class Stepchart:
         if not timing_data:
             return []
 
-        changes = timing_data.strip().split(',')
+        changes = timing_data.strip().split(",")
         timing_changes = []
 
         for change in changes:
@@ -334,7 +325,7 @@ class Stepchart:
             if not change:
                 continue
 
-            values = change.strip().split('=')
+            values = change.strip().split("=")
             values = [float(value) for value in values]
             if len(values) > 2:
                 values[-1] = bool(values[-1])
@@ -365,23 +356,22 @@ class Stepchart:
             data = self.timing_data[key]
             parsed_data = self.parse_timing_changes(key, data)
             if parsed_data:
-                df = pd.DataFrame(columns = cols, data = parsed_data)
+                df = pd.DataFrame(columns=cols, data=parsed_data)
                 data_frames.append(df)
 
         # Merge the timing data frames.
         timing_df = reduce(
-            lambda df1, df2: pd.merge(df1, df2, how='outer', on='beat'),
-            data_frames
+            lambda df1, df2: pd.merge(df1, df2, how="outer", on="beat"), data_frames
         )
 
         # Ensure certain columns are present.
-        columns = ['stop', 'delay', 'warp']
+        columns = ["stop", "delay", "warp"]
         for col in columns:
             if col not in timing_df.columns:
                 timing_df[col] = np.nan
 
         # Convert the type of the 'speed_mode' column to float.
-        timing_df = timing_df.astype({'speed_mode': 'float64'})
+        timing_df = timing_df.astype({"speed_mode": "float64"})
 
         return timing_df
 
@@ -400,8 +390,8 @@ class Stepchart:
             Records all steps in the stepchart.
         """
         parsed_stepchart = self.parse_steps(self.notes)
-        steps_cols = ['panel', 'step_type', 'beat']
-        steps_df = pd.DataFrame(columns = steps_cols, data = parsed_stepchart)
+        steps_cols = ["panel", "step_type", "beat"]
+        steps_df = pd.DataFrame(columns=steps_cols, data=parsed_stepchart)
 
         return steps_df
 
@@ -416,7 +406,7 @@ class Stepchart:
         (notes/timing changes) within the stepchart and the columns
         describe each event as well as the beat and second at whcih it
         occurs.
-        
+
         Returns
         -------
         chart_df : pd.DataFrame
@@ -427,194 +417,183 @@ class Stepchart:
         # Merge the step and timing data.
         steps_df = self.steps_to_df()
         timing_df = self.timing_changes_to_df()
-        df = pd.merge(steps_df, timing_df, on='beat', how='outer')
+        df = pd.merge(steps_df, timing_df, on="beat", how="outer")
 
         # Get the rows and columns corresponding to tap notes.
-        tap_sel = df['step_type'] == 'tap'
-        tap_df = df.loc[tap_sel, ['beat', 'panel']]
+        tap_sel = df["step_type"] == "tap"
+        tap_df = df.loc[tap_sel, ["beat", "panel"]]
 
         # Get the rows corresponding to hold notes.
-        hold_caps = df['step_type'] == 'hold (cap)'
-        hold_tails = df['step_type'] == 'hold (tail)'
+        hold_caps = df["step_type"] == "hold (cap)"
+        hold_tails = df["step_type"] == "hold (tail)"
         hold_sel = (hold_caps) | (hold_tails)
-        hold_cols = ['panel', 'step_type', 'beat']
-        sort_cols = ['panel', 'beat', 'step_type']
+        hold_cols = ["panel", "step_type", "beat"]
+        sort_cols = ["panel", "beat", "step_type"]
         hold_df = df.loc[hold_sel, hold_cols].sort_values(sort_cols)
 
         # Fix any holds that are warped over.
-        warps = df.loc[df['warp'] > 0, ['beat', 'warp']].copy()
-        warps['end'] = warps['beat'] + warps['warp']
+        warps = df.loc[df["warp"] > 0, ["beat", "warp"]].copy()
+        warps["end"] = warps["beat"] + warps["warp"]
         cap_warped = lambda x: warps.loc[
-            (warps['beat'] < x) & (warps['end'] > x),
-            'end'
+            (warps["beat"] < x) & (warps["end"] > x), "end"
         ].max()
-        sel = hold_df['step_type'] == 'hold (cap)'
-        caps = hold_df.loc[sel, 'beat']
+        sel = hold_df["step_type"] == "hold (cap)"
+        caps = hold_df.loc[sel, "beat"]
         fixed_caps = caps.apply(cap_warped).fillna(caps)
-        hold_df.loc[sel, 'beat'] = fixed_caps
+        hold_df.loc[sel, "beat"] = fixed_caps
         tail_warped = lambda x: warps.loc[
-            (warps['beat'] < x) & (warps['end'] > x),
-            'beat'
+            (warps["beat"] < x) & (warps["end"] > x), "beat"
         ].max()
-        sel = hold_df['step_type'] == 'hold (tail)'
-        tails = hold_df.loc[sel, 'beat']
+        sel = hold_df["step_type"] == "hold (tail)"
+        tails = hold_df.loc[sel, "beat"]
         fixed_tails = tails.apply(tail_warped).fillna(tails)
-        hold_df.loc[sel, 'beat'] = fixed_tails
+        hold_df.loc[sel, "beat"] = fixed_tails
 
         # Get hold durations.
-        hold_df['duration'] = hold_df['beat'].diff(-1).abs()
-        cap_sel = hold_df['step_type'] == 'hold (cap)'
-        tail_sel = hold_df['step_type'] == 'hold (tail)'
-        hold_df.loc[tail_sel, 'duration'] = 0
+        hold_df["duration"] = hold_df["beat"].diff(-1).abs()
+        cap_sel = hold_df["step_type"] == "hold (cap)"
+        tail_sel = hold_df["step_type"] == "hold (tail)"
+        hold_df.loc[tail_sel, "duration"] = 0
 
-        hold_df = hold_df.drop('step_type', axis=1)
+        hold_df = hold_df.drop("step_type", axis=1)
 
         # Represent the possible panels by a string.
         if self.panels == 5:
-            panels = 'ZQSEC'
+            panels = "ZQSEC"
         elif self.panels == 10:
-            panels = 'ZQSECVRGYN'
+            panels = "ZQSECVRGYN"
         else:
-            panels = ''
+            panels = ""
 
         # Dummify the panel columns.
         for panel in panels:
-            panel_sel = tap_df['panel'] == panel
-            tap_df[f'tap_{panel}'] = panel_sel
-            panel_sel = hold_df['panel'] == panel
-            hold_df[f'hold_{panel}'] = panel_sel & cap_sel
-            hold_df[f'hold_duration_{panel}'] = panel_sel \
-                * hold_df['duration']
+            panel_sel = tap_df["panel"] == panel
+            tap_df[f"tap_{panel}"] = panel_sel
+            panel_sel = hold_df["panel"] == panel
+            hold_df[f"hold_{panel}"] = panel_sel & cap_sel
+            hold_df[f"hold_duration_{panel}"] = panel_sel * hold_df["duration"]
 
         # Drop artifact columns and merge rows with equal beats.
-        hold_df = hold_df.drop(['panel','duration'], axis=1)
-        hold_df = hold_df.groupby('beat').sum().reset_index()
-        tap_df = tap_df.drop('panel', axis=1)
-        tap_df = tap_df.groupby('beat').sum().reset_index()
+        hold_df = hold_df.drop(["panel", "duration"], axis=1)
+        hold_df = hold_df.groupby("beat").sum().reset_index()
+        tap_df = tap_df.drop("panel", axis=1)
+        tap_df = tap_df.groupby("beat").sum().reset_index()
 
         # Set hold durations to null when no hold is active.
         for panel in panels:
-            panel_sel = df['panel'] == panel
-            cap_sel = df['step_type'] == 'hold (cap)'
-            tail_sel = df['step_type'] == 'hold (tail)'
+            panel_sel = df["panel"] == panel
+            cap_sel = df["step_type"] == "hold (cap)"
+            tail_sel = df["step_type"] == "hold (tail)"
             sel = panel_sel & (cap_sel | tail_sel)
-            beats = df.loc[sel, 'beat']
-            inactive_beats = ~hold_df['beat'].isin(beats)
-            col = f'hold_duration_{panel}'
+            beats = df.loc[sel, "beat"]
+            inactive_beats = ~hold_df["beat"].isin(beats)
+            col = f"hold_duration_{panel}"
             hold_df.loc[inactive_beats, col] = np.nan
 
         # Get tickcount changes.
-        sel = df['tickcount'].notna()
-        tickcount_df = df.loc[sel, ['beat', 'tickcount']].copy()
+        sel = df["tickcount"].notna()
+        tickcount_df = df.loc[sel, ["beat", "tickcount"]].copy()
 
         # Get the columns corresponding to real time data.
-        timing_cols = ['beat', 'bpm', 'stop', 'delay', 'warp']
+        timing_cols = ["beat", "bpm", "stop", "delay", "warp"]
         sel = reduce(
-            lambda s1, s2: s1 | s2,
-            (df[col].notna() for col in timing_cols[1:])
+            lambda s1, s2: s1 | s2, (df[col].notna() for col in timing_cols[1:])
         )
         timing_df = df.loc[sel, timing_cols]
 
         # Get the columns corresponding to scroll rate changes.
-        scroll_cols = [
-            'beat',
-            'speed',
-            'speed_duration',
-            'speed_mode',
-            'scroll_factor'
-        ]
+        scroll_cols = ["beat", "speed", "speed_duration", "speed_mode", "scroll_factor"]
         sel = reduce(
-            lambda s1, s2: s1 | s2,
-            (df[col].notna() for col in scroll_cols[1:])
+            lambda s1, s2: s1 | s2, (df[col].notna() for col in scroll_cols[1:])
         )
         scroll_df = df.loc[sel, scroll_cols]
 
         # Merge the data frames and sort by beat.
         data_frames = [tap_df, hold_df, tickcount_df, timing_df, scroll_df]
-        chart_df = reduce(
-            lambda df1, df2: pd.merge(df1, df2, how='outer', on='beat'),
-            data_frames
-        ).drop_duplicates().sort_values('beat')
+        chart_df = (
+            reduce(
+                lambda df1, df2: pd.merge(df1, df2, how="outer", on="beat"), data_frames
+            )
+            .drop_duplicates()
+            .sort_values("beat")
+        )
 
         # Fill in hold durations.
-        cols = [f'hold_duration_{panel}' for panel in panels]
+        cols = [f"hold_duration_{panel}" for panel in panels]
         for col in cols:
-            tail_beat = chart_df[col].where(
-                chart_df[col].isna(),
-                chart_df['beat'] + chart_df[col]
-            ).ffill()
-            duration = chart_df[col].fillna(tail_beat - chart_df['beat'])
+            tail_beat = (
+                chart_df[col]
+                .where(chart_df[col].isna(), chart_df["beat"] + chart_df[col])
+                .ffill()
+            )
+            duration = chart_df[col].fillna(tail_beat - chart_df["beat"])
             chart_df[col] = duration
             chart_df[col] = np.where(duration >= 0, duration, np.nan)
 
         # Get rows and columns correspoding to warps.
-        warps = chart_df.loc[chart_df['warp'] > 0, ['beat', 'warp']].copy()
-        warps['end'] = warps['beat'] + warps['warp']
+        warps = chart_df.loc[chart_df["warp"] > 0, ["beat", "warp"]].copy()
+        warps["end"] = warps["beat"] + warps["warp"]
 
         # Ignore steps placed on top of warps.
         step_cols = []
         for panel in panels:
-            cols = [f'tap_{panel}', f'hold_{panel}']
+            cols = [f"tap_{panel}", f"hold_{panel}"]
             step_cols.extend(cols)
         chart_df.loc[warps.index, step_cols] = 0
 
         # Drop rows which are warped over.
-        warped = lambda x: (
-            (x > warps['beat'])
-            & (x < warps['end'])
-        ).sum() > 0
-        warped_over = chart_df['beat'].apply(warped)
+        warped = lambda x: ((x > warps["beat"]) & (x < warps["end"])).sum() > 0
+        warped_over = chart_df["beat"].apply(warped)
         warped_over = chart_df.loc[warped_over, :]
         chart_df = chart_df.drop(warped_over.index)
 
         # Forward fill the 'bpm' column and 0-fill other columns.
-        chart_df['bpm'] = chart_df['bpm'].ffill()
-        cols = ['stop', 'delay', 'warp']
+        chart_df["bpm"] = chart_df["bpm"].ffill()
+        cols = ["stop", "delay", "warp"]
         chart_df.loc[:, cols] = chart_df.loc[:, cols].fillna(0)
 
         # Get row-to-row changes in beats and combine with stop, delay,
         # and warp numbers to get elapsed seconds for each row.
-        warp_sum = chart_df['warp'].cumsum().shift(1).fillna(0)
-        beats_corrected = chart_df['beat'] - warp_sum
+        warp_sum = chart_df["warp"].cumsum().shift(1).fillna(0)
+        beats_corrected = chart_df["beat"] - warp_sum
         beat_delta = beats_corrected.diff(-1).fillna(0).abs()
-        spb = 60 / chart_df['bpm'] # Calculate seconds per beat.
-        time_shift = (chart_df['stop'] + chart_df['delay']).cumsum()
+        spb = 60 / chart_df["bpm"]  # Calculate seconds per beat.
+        time_shift = (chart_df["stop"] + chart_df["delay"]).cumsum()
         time_shift -= self.offset
         sec = (beat_delta * spb).cumsum() + time_shift
         sec = sec.shift(1).fillna(0)
-        chart_df['sec'] = sec
-        
+        chart_df["sec"] = sec
+
         # Forward fill the 'speed' and 'scroll factor' and create
         # scroll rate column.
-        chart_df['speed'] = chart_df['speed'].ffill()
-        chart_df['scroll_factor'] = chart_df['scroll_factor'].ffill()
-        scroll_rate = chart_df['speed'] * chart_df['scroll_factor']
-        chart_df['scroll_rate'] = scroll_rate
+        chart_df["speed"] = chart_df["speed"].ffill()
+        chart_df["scroll_factor"] = chart_df["scroll_factor"].ffill()
+        scroll_rate = chart_df["speed"] * chart_df["scroll_factor"]
+        chart_df["scroll_rate"] = scroll_rate
 
         # Convert the type of dummy columns to int.
         for panel in panels:
-            cols = [f'tap_{panel}', f'hold_{panel}']
+            cols = [f"tap_{panel}", f"hold_{panel}"]
             for col in cols:
                 chart_df[col] = chart_df[col].fillna(0).astype(int)
 
         # Reorder the columns and reset the index.
-        cols_ordered = ['beat', 'sec', 'bpm']
-        tap_cols = [f'tap_{panel}' for panel in panels]
-        hold_cols = [f'hold_{panel}' for panel in panels]
-        hold_duration_cols = [f'hold_duration_{panel}' for panel in panels]
+        cols_ordered = ["beat", "sec", "bpm"]
+        tap_cols = [f"tap_{panel}" for panel in panels]
+        hold_cols = [f"hold_{panel}" for panel in panels]
+        hold_duration_cols = [f"hold_duration_{panel}" for panel in panels]
         cols_ordered.extend(tap_cols + hold_cols + hold_duration_cols)
-        cols_ordered.append('tickcount')
+        cols_ordered.append("tickcount")
         cols_ordered.extend(timing_cols[2:] + scroll_cols[1:])
         chart_df = chart_df.loc[:, cols_ordered].reset_index(drop=True)
 
         # Correct the initial time.
-        chart_df.loc[0, 'sec'] = -self.offset
+        chart_df.loc[0, "sec"] = -self.offset
 
         # Forward fill the 'tickcount' column.
-        chart_df['tickcount'] = chart_df['tickcount'].ffill()
+        chart_df["tickcount"] = chart_df["tickcount"].ffill()
 
         # Delete duplicated timestamps.
-        chart_df = chart_df.drop_duplicates(subset='sec')
+        chart_df = chart_df.drop_duplicates(subset="sec")
 
         return chart_df
-        
