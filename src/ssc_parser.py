@@ -125,6 +125,9 @@ class SSCFile:
         header = header.replace(";;", ";")
         header = header[1:]
 
+        # Replace escaped semicolons to prevent splitting issues.
+        header = header.replace("\\:", "Ͽ")
+
         # Attribute key and values are separated by a semicolon.
         key_vals = header.split(";")
 
@@ -140,6 +143,9 @@ class SSCFile:
                 key, val = key_val.split(":")[:2]
             if key[0] == "#":
                 key = key[1:]
+                # Restore escaped semicolons.
+                val = val.replace("Ͽ", ":")
+
                 atts[key] = val
 
         return atts
