@@ -125,9 +125,8 @@ class SSCFile:
         header = header.replace(";;", ";")
         header = header[1:]
 
-        # Replace escaped semicolons/number signs to prevent splitting issues.
+        # Replace escaped semicolons to prevent splitting issues.
         header = header.replace("\\:", "Ͽ")
-        header = header.replace("\\#", "Ͼ")
 
         # Attribute key and values are separated by a semicolon.
         key_vals = header.split(";")
